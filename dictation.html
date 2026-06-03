@@ -1,0 +1,421 @@
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Lesson4 문장 받아쓰기</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Nunito:wght@600;700;800&display=swap');
+  :root {
+    --bg:#fdeef2; --card:#fff; --ink:#3d2433;
+    --primary:#e5577f; --primary-d:#c43e66;
+    --good:#34b27b; --bad:#ef6461;
+    --soft:#fcdde6; --line:#f6c6d4; --shadow:0 8px 0 #f0b8c8; --muted:#a06b80;
+  }
+  * { box-sizing:border-box; margin:0; padding:0; -webkit-tap-highlight-color:transparent; }
+  body { font-family:'Nunito',sans-serif; color:var(--ink);
+    background:radial-gradient(circle at 18% 18%,#fcd3e0 0,transparent 45%),radial-gradient(circle at 82% 82%,#ffe0cf 0,transparent 45%),var(--bg);
+    min-height:100vh; display:flex; align-items:center; justify-content:center; padding:16px; }
+  .stage { width:100%; max-width:460px; background:var(--card); border:3px solid var(--line);
+    border-radius:28px; box-shadow:var(--shadow); padding:24px 22px 26px; position:relative; overflow:hidden; }
+  h1,.btn,.score-num,.prompt .word,.answer,.class-total { font-family:'Fredoka',sans-serif; }
+
+  .topbar { display:flex; justify-content:space-between; align-items:center; margin-bottom:14px; font-weight:800; font-size:15px; }
+  .pill { background:var(--soft); border:2px solid var(--line); border-radius:999px; padding:5px 14px; }
+  .pill b { color:var(--primary-d); }
+  .progress { height:12px; background:var(--soft); border-radius:999px; overflow:hidden; margin-bottom:22px; border:2px solid var(--line); }
+  .progress > i { display:block; height:100%; width:0%; background:linear-gradient(90deg,var(--primary),var(--primary-d)); border-radius:999px; transition:width .35s ease; }
+
+  .prompt { text-align:center; padding:26px 16px; background:var(--soft); border:3px dashed var(--line); border-radius:22px; margin-bottom:18px; position:relative; }
+  .prompt .label { font-size:14px; color:var(--muted); font-weight:800; letter-spacing:1px; }
+  .prompt .word { font-size:40px; font-weight:700; margin-top:6px; color:var(--primary-d); }
+  .prompt .blanks { font-family:'Fredoka'; font-size:24px; letter-spacing:6px; color:var(--muted); margin-top:10px; min-height:30px; }
+  .listen-btn { margin-top:14px; display:inline-flex; align-items:center; gap:6px; font-family:'Fredoka'; font-size:16px; font-weight:600;
+    color:var(--primary-d); background:#fff; border:2px solid var(--line); border-radius:999px; padding:8px 18px; cursor:pointer; }
+  .listen-btn:active { transform:scale(.95); }
+
+  .typebox { display:flex; gap:10px; margin-bottom:8px; }
+  #answerInput { flex:1; font-family:'Fredoka'; font-size:22px; text-align:center; padding:14px; border:3px solid var(--line); border-radius:16px; outline:none; color:var(--ink); }
+  #answerInput:focus { border-color:var(--primary); }
+  .go { font-family:'Fredoka'; font-size:20px; font-weight:700; color:#fff; background:var(--primary); border:none;
+    border-bottom:4px solid var(--primary-d); border-radius:16px; padding:0 20px; cursor:pointer; }
+  .go:active { transform:translateY(2px); border-bottom-width:2px; }
+
+  .btn { font-size:21px; font-weight:700; color:#fff; background:var(--primary); border:none;
+    border-bottom:5px solid var(--primary-d); border-radius:18px; padding:14px 24px; cursor:pointer; width:100%; transition:transform .08s; }
+  .btn:active { transform:translateY(3px); border-bottom-width:2px; }
+  .btn.secondary { background:#fff; color:var(--primary-d); border:2px solid var(--line); border-bottom:4px solid var(--line); margin-top:10px; }
+
+  .feedback { text-align:center; font-family:'Fredoka'; font-weight:700; font-size:19px; min-height:26px; margin-top:14px; }
+  .feedback.good { color:var(--good); } .feedback.bad { color:var(--bad); }
+  .answer { color:var(--primary-d); }
+
+  .screen { text-align:center; padding:14px 4px; }
+  .screen h1 { font-size:32px; font-weight:700; line-height:1.15; margin-bottom:8px; }
+  .screen p { font-size:16px; font-weight:700; color:var(--muted); margin-bottom:18px; }
+  .stats { display:flex; gap:10px; justify-content:center; margin-bottom:20px; flex-wrap:wrap; }
+  .stat { background:var(--soft); border:2px solid var(--line); border-radius:16px; padding:12px 16px; min-width:92px; }
+  .stat .score-num { font-size:26px; font-weight:700; color:var(--primary-d); }
+  .stat .cap { font-size:12px; font-weight:800; color:var(--muted); }
+  .wrong-list { text-align:left; background:var(--soft); border:2px solid var(--line); border-radius:16px; padding:14px 16px; margin-bottom:20px; }
+  .wrong-list h3 { font-family:'Fredoka'; font-size:15px; color:var(--bad); margin-bottom:8px; }
+  .wrong-list li { list-style:none; padding:4px 0; font-weight:700; font-size:15px; border-bottom:1px dashed var(--line); }
+  .wrong-list li:last-child { border:none; }
+  .hide { display:none !important; }
+
+  .garden { background:var(--soft); border:2px dashed var(--line); border-radius:18px; padding:16px 14px; margin-bottom:16px; }
+  .creature { height:74px; display:flex; align-items:flex-end; justify-content:center; }
+  .creature svg { height:72px; width:auto; }
+  .creature .bob { animation:bob 2s ease-in-out infinite; }
+  .creature .sway { animation:sway 3s ease-in-out infinite; transform-origin:top center; }
+  @keyframes bob { 0%,100%{ transform:translateY(0);} 50%{ transform:translateY(-7px);} }
+  @keyframes sway { 0%,100%{ transform:rotate(-5deg);} 50%{ transform:rotate(5deg);} }
+  .stage-name { font-family:'Fredoka'; font-weight:700; font-size:18px; color:var(--primary-d); margin-top:6px; }
+  .growth-bar { height:12px; background:#fff; border:2px solid var(--line); border-radius:999px; overflow:hidden; margin:10px 0 6px; }
+  .growth-bar > i { display:block; height:100%; width:0%; background:linear-gradient(90deg,#8fd14f,#4e9a2f); transition:width .5s ease; }
+  .growth-cap { font-size:13px; font-weight:800; color:var(--muted); }
+  .growth-cap b { color:var(--primary-d); }
+  .meadow { margin-top:14px; border-top:1px dashed var(--line); padding-top:12px; }
+  .meadow h3 { font-family:'Fredoka'; font-size:14px; color:var(--primary-d); margin-bottom:8px; }
+  .bfly-row { display:flex; flex-wrap:wrap; gap:3px; justify-content:center; max-height:96px; overflow-y:auto; }
+  .bfly-row svg { width:30px; height:27px; animation:flutter 2.4s ease-in-out infinite; }
+  @keyframes flutter { 0%,100%{ transform:scaleX(1);} 50%{ transform:scaleX(.76);} }
+  .bfly-empty { font-size:13px; color:var(--muted); font-weight:700; }
+
+  .reward-reveal { margin-bottom:14px; }
+  .flyaway-wrap { height:80px; display:flex; justify-content:center; align-items:flex-end; }
+  .flyaway-wrap svg { width:64px; height:58px; animation:flyaway 2.2s ease-in forwards; }
+  @keyframes flyaway { 0%{ transform:translate(0,18px) scale(.6); opacity:0;} 18%{ transform:translate(0,0) scale(1); opacity:1;}
+    55%{ transform:translate(-12px,-30px) rotate(-8deg); opacity:1;} 100%{ transform:translate(46px,-160px) scale(.55) rotate(12deg); opacity:0;} }
+  .grow-reveal { height:80px; display:flex; justify-content:center; align-items:flex-end; }
+  .grow-reveal svg { height:64px; animation:pop .5s ease; }
+  .reveal-text { font-family:'Fredoka'; font-weight:700; font-size:18px; color:var(--primary-d); margin-top:6px; }
+  .reveal-text.born { color:#4e9a2f; }
+  @keyframes pop { 0%{ transform:scale(0);} 70%{ transform:scale(1.2);} 100%{ transform:scale(1);} }
+
+  .class-total { font-size:50px; font-weight:700; color:var(--primary-d); line-height:1; }
+  .class-sub { font-size:14px; font-weight:800; color:var(--muted); margin-bottom:14px; }
+  .lb { text-align:left; margin:6px 0 12px; max-height:200px; overflow-y:auto; border:2px solid var(--line); border-radius:14px; }
+  .lb-row { display:flex; justify-content:space-between; align-items:center; padding:9px 14px; border-bottom:1px dashed var(--line); font-weight:700; font-size:15px; }
+  .lb-row:last-child { border-bottom:none; }
+  .lb-row.me { background:var(--soft); }
+  .lb-rank { color:var(--muted); width:26px; }
+  .lb-name { flex:1; }
+  .lb-count { color:var(--primary-d); font-family:'Fredoka'; }
+  .nick { display:flex; gap:8px; margin:6px 0 4px; }
+  .nick input { flex:1; font-family:'Nunito'; font-weight:700; font-size:16px; padding:11px 14px; border:2px solid var(--line); border-radius:14px; outline:none; }
+  .nick input:focus { border-color:var(--primary); }
+  .nick button { font-family:'Fredoka'; font-weight:700; color:#fff; background:var(--primary); border:none; border-radius:14px; padding:0 18px; cursor:pointer; }
+  .note { font-size:12px; color:var(--muted); margin-top:12px; line-height:1.55; text-align:left; background:var(--soft); border-radius:12px; padding:10px 12px; }
+  .export-box { margin-top:10px; text-align:left; }
+  .export-box textarea { width:100%; height:96px; font-family:monospace; font-size:11px; border:2px solid var(--line); border-radius:12px; padding:8px; resize:vertical; }
+</style>
+
+<div class="stage">
+
+  <div id="startScreen" class="screen">
+    <h1>문장 받아쓰기</h1>
+    <p>문장을 듣고 영어로 그대로 써 보세요!</p>
+    <div class="stats">
+      <div class="stat"><div class="score-num" id="bestScore">0</div><div class="cap">최고 점수</div></div>
+      <div class="stat"><div class="score-num" id="playCount">0</div><div class="cap">플레이 횟수</div></div>
+    </div>
+    <div class="garden">
+      <div class="creature" id="creature"></div>
+      <div class="stage-name" id="stageName">알</div>
+      <div class="growth-bar"><i id="growthBar"></i></div>
+      <div class="growth-cap">나비까지 게임 <b id="growthNow">0</b>/<span id="goalTxt">3</span>번</div>
+      <div class="meadow">
+        <h3>🦋 내가 키운 나비 <span id="bflyCount">0</span>마리</h3>
+        <div class="bfly-row" id="bflyRow"><span class="bfly-empty">게임을 하면 애벌레가 자라요!</span></div>
+      </div>
+    </div>
+    <button class="btn" onclick="startGame()">시작하기 ▶</button>
+    <button class="btn secondary" onclick="openClass()">🏫 우리 반 나비 정원 보기</button>
+  </div>
+
+  <div id="gameScreen" class="hide">
+    <div class="topbar">
+      <span class="pill">문제 <b id="qNow">1</b>/<span id="qTotal">10</span></span>
+      <span class="pill">점수 <b id="curScore">0</b></span>
+    </div>
+    <div class="progress"><i id="progressBar"></i></div>
+    <div class="prompt">
+      <div class="label">이 뜻의 영어 문장은?</div>
+      <div class="word" id="meaningText">사과</div>
+      <div class="blanks" id="blanks"></div>
+      <button class="listen-btn" onclick="speakCurrent()">🔊 다시 듣기</button>
+    </div>
+    <div class="typebox">
+      <input id="answerInput" type="text" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="여기에 입력" />
+      <button class="go" onclick="submitAnswer()">확인</button>
+    </div>
+    <div class="feedback" id="feedback"></div>
+  </div>
+
+  <div id="endScreen" class="screen hide">
+    <h1 id="endTitle">참 잘했어요!</h1>
+    <div class="reward-reveal" id="rewardReveal"></div>
+    <div class="stats">
+      <div class="stat"><div class="score-num" id="finalScore">0</div><div class="cap">최종 점수</div></div>
+      <div class="stat"><div class="score-num" id="accuracy">0%</div><div class="cap">정답률</div></div>
+    </div>
+    <div class="wrong-list hide" id="wrongBox"><h3>📌 다시 볼 문장</h3><ul id="wrongList"></ul></div>
+    <button class="btn" onclick="startGame()">다시 하기 🔄</button>
+    <button class="btn secondary" onclick="show('startScreen')">처음으로</button>
+  </div>
+
+  <div id="classScreen" class="screen hide">
+    <h1 style="font-size:26px">🏫 우리 반 나비 정원</h1>
+    <div class="class-total" id="classTotal">0</div>
+    <div class="class-sub">반 전체가 키운 나비</div>
+    <div class="lb" id="leaderboard"></div>
+    <div class="nick">
+      <input id="nickInput" type="text" maxlength="12" placeholder="여기에 내 번호 적기" />
+      <button onclick="saveNick()">저장</button>
+    </div>
+    <button class="btn secondary" onclick="loadClassGarden()">🔄 새로고침</button>
+    <button class="btn secondary" onclick="exportCSV()">📤 내 점수 복사하기</button>
+    <div class="export-box hide" id="exportBox">
+      <textarea id="csvText" readonly></textarea>
+      <button class="btn secondary" onclick="copyCSV()">📋 복사 완료 — 패들렛에 붙여넣기</button>
+    </div>
+    <button class="btn" style="margin-top:10px" onclick="show('startScreen')">돌아가기</button>
+    <div class="note">내 점수만 보여요. 끝나면 복사해서 패들렛에 올리세요. (실명 대신 번호를 적어요)</div>
+  </div>
+
+</div>
+
+<script>
+/* ============================================================
+   ⬇️⬇️⬇️  여기만 고치면 새 게임이 됩니다  ⬇️⬇️⬇️
+   ============================================================ */
+const WORDS = [
+  { en:"play basketball", ko:"농구를 하다" },
+  { en:"go to bed", ko:"잠자리에 들다" },
+  { en:"have dinner", ko:"저녁을 먹다" },
+  { en:"How about you?", ko:"너는 어때?" },
+  { en:"have a piano lesson", ko:"피아노 수업이 있다" },
+  { en:"get up at 6", ko:"6시에 일어나다" },
+  { en:"go to school at 8:30", ko:"8시 30분에 학교에 가다" },
+  { en:"What time do you walk the dog?", ko:"너는 몇 시에 개를 산책시키니?" },
+  { en:"I have a snack break at 11:00.", ko:"나는 11시에 간식 시간이 있어." },
+  { en:"I'm from Sydney, Australia.", ko:"나는 호주 시드니에서 왔어." },
+  { en:"I am from Beijing, China.", ko:"나는 중국 베이징에서 왔어." },
+];
+const SETTINGS = {
+  questionsPerGame:  11,       // 11문장 전부 출제
+  pointsPerCorrect:  10,
+  clearAccuracy:     0.8,
+  showFirstLetter:   false,    // 받아쓰기: 글자 힌트 없이 듣고 그대로 쓰기
+  speakOnShow:       true,
+  strictGrading:     true,     // 대문자·마침표·물음표 그대로 채점(공백만 정리)
+  gamesPerButterfly: 3,
+  gameName:   "Lesson4 받아쓰기",
+  storageKey: "lesson4_dictation_progress",
+  classKey:   "lesson4_dictation_class",
+};
+/* ============================================================
+   ⬆️⬆️⬆️  여기까지만 고치면 됩니다  ⬆️⬆️⬆️
+   ============================================================ */
+
+const SVG = {
+  egg: `<svg viewBox="0 0 80 80"><ellipse cx="40" cy="46" rx="22" ry="28" fill="#fff7e8" stroke="#e7c486" stroke-width="2.5"/><ellipse cx="32" cy="36" rx="6" ry="9" fill="#fff" opacity=".7"/><circle cx="49" cy="50" r="3.2" fill="#f1d59b"/><circle cx="35" cy="58" r="2.6" fill="#f1d59b"/><circle cx="46" cy="40" r="2.2" fill="#f1d59b"/><circle cx="40" cy="65" r="2.4" fill="#f1d59b"/></svg>`,
+  caterpillar: `<svg viewBox="0 0 110 70"><circle cx="22" cy="46" r="13" fill="#8fd14f"/><circle cx="39" cy="43" r="13" fill="#7cc63f"/><circle cx="56" cy="45" r="13" fill="#8fd14f"/><circle cx="78" cy="40" r="16" fill="#6db933"/><line x1="73" y1="26" x2="68" y2="15" stroke="#4e9a2f" stroke-width="2.5" stroke-linecap="round"/><line x1="84" y1="26" x2="89" y2="15" stroke="#4e9a2f" stroke-width="2.5" stroke-linecap="round"/><circle cx="67" cy="14" r="2.6" fill="#4e9a2f"/><circle cx="90" cy="14" r="2.6" fill="#4e9a2f"/><circle cx="75" cy="38" r="3.6" fill="#2c3e1f"/><circle cx="86" cy="38" r="3.6" fill="#2c3e1f"/><circle cx="76" cy="37" r="1.3" fill="#fff"/><circle cx="87" cy="37" r="1.3" fill="#fff"/><path d="M73 47 Q80 53 87 47" stroke="#2c3e1f" stroke-width="2" fill="none" stroke-linecap="round"/><circle cx="69" cy="45" r="3" fill="#ff9db0" opacity=".55"/><circle cx="91" cy="45" r="3" fill="#ff9db0" opacity=".55"/></svg>`,
+  chrysalis: `<svg viewBox="0 0 60 84"><line x1="30" y1="2" x2="30" y2="16" stroke="#9a7b4f" stroke-width="2.5"/><path d="M30 16 C11 23 14 62 30 75 C46 62 49 23 30 16 Z" fill="#5bbf4a"/><path d="M30 16 C23 23 23 62 30 75 C31 62 31 23 30 16 Z" fill="#46a637" opacity=".55"/><path d="M17 36 Q30 41 43 36" stroke="#e7c34a" stroke-width="2.6" fill="none"/><circle cx="24" cy="46" r="2.1" fill="#ffe08a"/><circle cx="36" cy="50" r="2.1" fill="#ffe08a"/><circle cx="30" cy="60" r="2.1" fill="#ffe08a"/></svg>`,
+};
+const BFLY_COLORS = [["#ff8fab","#ffc2d4"],["#7cc6ff","#c2e2ff"],["#ffd166","#ffe9a8"],["#b794f6","#e2d3fb"],["#6ee7b7","#bdf0d8"],["#ff9e7a","#ffcdb8"],["#9ad0ff","#cfe9ff"],["#ffafcc","#ffd6e6"]];
+function butterflySVG(i) {
+  const [c1,c2] = BFLY_COLORS[i % BFLY_COLORS.length];
+  return `<svg viewBox="0 0 90 80"><ellipse cx="28" cy="30" rx="20" ry="16" fill="${c1}"/><ellipse cx="62" cy="30" rx="20" ry="16" fill="${c1}"/><ellipse cx="31" cy="55" rx="15" ry="14" fill="${c2}"/><ellipse cx="59" cy="55" rx="15" ry="14" fill="${c2}"/><circle cx="25" cy="28" r="5" fill="#fff" opacity=".55"/><circle cx="65" cy="28" r="5" fill="#fff" opacity=".55"/><circle cx="30" cy="55" r="3.5" fill="#fff" opacity=".45"/><circle cx="60" cy="55" r="3.5" fill="#fff" opacity=".45"/><ellipse cx="45" cy="42" rx="4.5" ry="20" fill="#5a3d2b"/><circle cx="45" cy="22" r="5" fill="#5a3d2b"/><path d="M45 19 Q40 8 34 6" stroke="#5a3d2b" stroke-width="2" fill="none" stroke-linecap="round"/><path d="M45 19 Q50 8 56 6" stroke="#5a3d2b" stroke-width="2" fill="none" stroke-linecap="round"/><circle cx="34" cy="6" r="2.2" fill="#5a3d2b"/><circle cx="56" cy="6" r="2.2" fill="#5a3d2b"/></svg>`;
+}
+
+let progress = { bestScore:0, gamesPlayed:0, lastPlayed:"", wrongWords:[], growth:0, butterflies:0 };
+let myId = "", myNick = "", classRows = [];
+let quiz = [], idx = 0, score = 0, correctCount = 0, wrongThisGame = [], locked = false, classTimer = null;
+
+function speak(text) {
+  try { if (!("speechSynthesis" in window)) return;
+    window.speechSynthesis.cancel();
+    const u = new SpeechSynthesisUtterance(text); u.lang="en-US"; u.rate=0.9;
+    window.speechSynthesis.speak(u);
+  } catch (e) {}
+}
+function speakCurrent(){ if (quiz[idx]) speak(quiz[idx].en); }
+
+async function loadProgress() {
+  try { const r = await window.storage.get(SETTINGS.storageKey, false); if (r&&r.value) progress = JSON.parse(r.value); } catch (e) {}
+  if (progress.growth == null) progress.growth = 0;
+  if (progress.butterflies == null) progress.butterflies = 0;
+  try { const a = await window.storage.get("myId", false); myId = a&&a.value ? a.value : ""; } catch(e){ myId=""; }
+  if (!myId) { myId = Math.random().toString(36).slice(2,10); try{ await window.storage.set("myId", myId, false);}catch(e){} }
+  try { const b = await window.storage.get("nickname", false); myNick = b&&b.value ? b.value : ""; } catch(e){ myNick=""; }
+  document.getElementById("bestScore").textContent = progress.bestScore || 0;
+  document.getElementById("playCount").textContent = progress.gamesPlayed || 0;
+  document.getElementById("goalTxt").textContent = SETTINGS.gamesPerButterfly;
+  renderGarden(); syncClass();
+}
+async function saveProgress() { try { await window.storage.set(SETTINGS.storageKey, JSON.stringify(progress), false); } catch (e) {} }
+async function syncClass() {
+  try {
+    const val = { name: myNick||"이름없음", count: progress.butterflies||0, games: progress.gamesPlayed||0, best: progress.bestScore||0, last: progress.lastPlayed||"", ts: Date.now() };
+    await window.storage.set(SETTINGS.classKey + ":" + myId, JSON.stringify(val), true);
+  } catch (e) {}
+}
+
+function stageMarkup(g) {
+  const goal = SETTINGS.gamesPerButterfly, t = g/goal;
+  if (t < 1/3) return { name:"알", html:`<div class="bob">${SVG.egg}</div>` };
+  if (t < 2/3) return { name:"애벌레", html:`<div class="bob">${SVG.caterpillar}</div>` };
+  return { name:"번데기", html:`<div class="sway">${SVG.chrysalis}</div>` };
+}
+function renderGarden() {
+  const s = stageMarkup(progress.growth);
+  document.getElementById("creature").innerHTML = s.html;
+  document.getElementById("stageName").textContent = s.name;
+  document.getElementById("growthBar").style.width = (progress.growth / SETTINGS.gamesPerButterfly * 100) + "%";
+  document.getElementById("growthNow").textContent = progress.growth;
+  document.getElementById("bflyCount").textContent = progress.butterflies;
+  const row = document.getElementById("bflyRow");
+  if (!progress.butterflies) { row.innerHTML = '<span class="bfly-empty">게임을 하면 애벌레가 자라요!</span>'; }
+  else {
+    const n = Math.min(progress.butterflies, 60); let html = "";
+    for (let i=0;i<n;i++) html += butterflySVG(i);
+    if (progress.butterflies > 60) html += `<span class="bfly-empty">+${progress.butterflies-60}</span>`;
+    row.innerHTML = html;
+  }
+}
+function addGrowth() {
+  let born = 0; progress.growth += 1;
+  while (progress.growth >= SETTINGS.gamesPerButterfly) { progress.growth -= SETTINGS.gamesPerButterfly; progress.butterflies += 1; born++; }
+  return born;
+}
+
+function shuffle(a){ return [...a].sort(()=>Math.random()-0.5); }
+
+function startGame() {
+  const n = Math.min(SETTINGS.questionsPerGame, WORDS.length);
+  quiz = shuffle(WORDS).slice(0, n);
+  idx=0; score=0; correctCount=0; wrongThisGame=[];
+  document.getElementById("qTotal").textContent = n;
+  show("gameScreen"); renderQuestion();
+}
+function renderQuestion() {
+  locked = false; const q = quiz[idx];
+  document.getElementById("qNow").textContent = idx+1;
+  document.getElementById("curScore").textContent = score;
+  document.getElementById("progressBar").style.width = (idx/quiz.length*100)+"%";
+  document.getElementById("meaningText").textContent = q.ko;
+  const blanks = SETTINGS.showFirstLetter
+    ? q.en.split("").map((ch,i)=>(i===0)?ch:"_").join(" ")
+    : "✏️ 들은 문장을 그대로 써 보세요";
+  document.getElementById("blanks").textContent = blanks;
+  const input = document.getElementById("answerInput");
+  input.value=""; input.disabled=false; input.focus();
+  document.getElementById("feedback").textContent=""; document.getElementById("feedback").className="feedback";
+  if (SETTINGS.speakOnShow) setTimeout(()=>speak(q.en),250);
+}
+function submitAnswer() {
+  if (locked) return;
+  const q = quiz[idx], input = document.getElementById("answerInput");
+  const norm = s => s.trim().replace(/\s+/g," ");   // 앞뒤·중복 공백만 정리
+  const guess = norm(input.value); if (!guess) return;
+  const target = norm(q.en);
+  locked=true; input.disabled=true;
+  const fb = document.getElementById("feedback"); speak(q.en);
+  const isCorrect = SETTINGS.strictGrading ? (guess === target) : (guess.toLowerCase() === target.toLowerCase());
+  if (isCorrect) {
+    score += SETTINGS.pointsPerCorrect; correctCount++;
+    fb.innerHTML="정답이에요! 🎉"; fb.className="feedback good";
+    document.getElementById("curScore").textContent = score;
+  } else {
+    wrongThisGame.push(q);
+    fb.innerHTML=`아쉬워요! 정답은 <span class="answer">${q.en}</span>`; fb.className="feedback bad";
+  }
+  setTimeout(()=>{ idx++; if (idx<quiz.length) renderQuestion(); else endGame(); }, 1300);
+}
+document.getElementById("answerInput").addEventListener("keydown", e => { if (e.key==="Enter") submitAnswer(); });
+
+async function endGame() {
+  const accuracy = correctCount/quiz.length, cleared = accuracy >= SETTINGS.clearAccuracy;
+  progress.gamesPlayed = (progress.gamesPlayed||0)+1;
+  progress.bestScore = Math.max(progress.bestScore||0, score);
+  progress.lastPlayed = new Date().toISOString().slice(0,10);
+  const wrongEns = wrongThisGame.map(w=>w.en);
+  progress.wrongWords = [...new Set([...wrongEns, ...(progress.wrongWords||[])])].slice(0,20);
+  const born = addGrowth();
+  await saveProgress(); await syncClass();
+
+  document.getElementById("finalScore").textContent = score;
+  document.getElementById("accuracy").textContent = Math.round(accuracy*100)+"%";
+  const rr = document.getElementById("rewardReveal");
+  if (born > 0) {
+    document.getElementById("endTitle").textContent = "나비가 되어 날아갔어요!";
+    rr.innerHTML = `<div class="flyaway-wrap">${butterflySVG(progress.butterflies-1)}</div><div class="reveal-text born">🦋 우리 반 정원으로 날아갔어요!</div>`;
+  } else {
+    const s = stageMarkup(progress.growth);
+    document.getElementById("endTitle").textContent = cleared ? "참 잘했어요!" : "조금만 더 힘내요!";
+    rr.innerHTML = `<div class="grow-reveal">${s.html.replace(/class="(bob|sway)"/,'')}</div><div class="reveal-text">${s.name}(으)로 한 단계 자랐어요!</div>`;
+  }
+  const wrongBox = document.getElementById("wrongBox");
+  if (wrongThisGame.length) { document.getElementById("wrongList").innerHTML = wrongThisGame.map(w=>`<li>${w.en} — ${w.ko}</li>`).join(""); wrongBox.classList.remove("hide"); }
+  else wrongBox.classList.add("hide");
+  renderGarden(); show("endScreen");
+}
+
+/* 반 전체 정원 + 성적표 */
+function openClass() {
+  document.getElementById("nickInput").value = myNick || "";
+  document.getElementById("exportBox").classList.add("hide");
+  show("classScreen"); loadClassGarden();
+  if (classTimer) clearInterval(classTimer);
+  classTimer = setInterval(loadClassGarden, 12000);
+}
+async function saveNick() {
+  myNick = document.getElementById("nickInput").value.trim();
+  try { await window.storage.set("nickname", myNick, false); } catch(e){}
+  await syncClass(); loadClassGarden();
+}
+async function loadClassGarden() {
+  const lb = document.getElementById("leaderboard");
+  try {
+    const res = await window.storage.list(SETTINGS.classKey + ":", true);
+    const keys = (res && res.keys) || []; let total = 0; const rows = [];
+    for (const k of keys) {
+      try { const r = await window.storage.get(k, true);
+        if (r && r.value) { const v = JSON.parse(r.value); total += (v.count||0);
+          rows.push({ id:k.split(":").pop(), name:v.name||"이름없음", count:v.count||0, games:v.games||0, best:v.best||0, last:v.last||"" }); }
+      } catch(e){}
+    }
+    rows.sort((a,b)=>b.count-a.count); classRows = rows;
+    document.getElementById("classTotal").textContent = total;
+    if (!rows.length) { lb.innerHTML = '<div class="lb-row"><span class="lb-name" style="color:var(--muted)">아직 친구들의 기록이 없어요</span></div>'; return; }
+    lb.innerHTML = rows.map((r,i)=>
+      `<div class="lb-row ${r.id===myId?'me':''}"><span class="lb-rank">${i+1}</span><span class="lb-name">${r.name}${r.id===myId?' (나)':''}</span><span class="lb-count">🦋 ${r.count} · ${r.games}판</span></div>`
+    ).join("");
+  } catch(e) {
+    classRows = [{ id:myId, name:myNick||"이름없음", count:progress.butterflies, games:progress.gamesPlayed, best:progress.bestScore, last:progress.lastPlayed }];
+    document.getElementById("classTotal").textContent = progress.butterflies;
+    lb.innerHTML = '<div class="lb-row"><span class="lb-name" style="color:var(--muted)">이 환경에서는 공유 정원을 쓸 수 없어 내 기록만 보여요</span></div>';
+  }
+}
+function csvCell(s){ s = String(s); return /[",\n]/.test(s) ? '"'+s.replace(/"/g,'""')+'"' : s; }
+function exportCSV() {
+  const header = ["게임","별명","플레이횟수","최고점수","나비수","마지막플레이"];
+  const lines = [header.join(",")];
+  classRows.forEach(r => lines.push([SETTINGS.gameName, csvCell(r.name), r.games, r.best, r.count, r.last].map(csvCell).join(",")));
+  const text = "\ufeff" + lines.join("\n");
+  document.getElementById("csvText").value = text;
+  document.getElementById("exportBox").classList.remove("hide");
+  /* 파일 다운로드 없이 복사만 사용 (태블릿·패들렛용) */
+}
+function copyCSV() {
+  const ta = document.getElementById("csvText"); ta.select();
+  try { navigator.clipboard.writeText(ta.value); } catch(e) { document.execCommand("copy"); }
+}
+
+function show(id) {
+  if (id !== "classScreen" && classTimer) { clearInterval(classTimer); classTimer = null; }
+  ["startScreen","gameScreen","endScreen","classScreen"].forEach(s => document.getElementById(s).classList.toggle("hide", s !== id));
+  if (id === "startScreen") renderGarden();
+}
+
+loadProgress();
+</script>
